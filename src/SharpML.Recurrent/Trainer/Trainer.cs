@@ -9,6 +9,7 @@ using SharpML.Recurrent.Loss;
 using SharpML.Recurrent.Models;
 using SharpML.Recurrent.Networks;
 using SharpML.Recurrent.Util;
+using System.Diagnostics;
 
 namespace SharpML.Recurrent.Trainer
 {
@@ -44,10 +45,10 @@ namespace SharpML.Recurrent.Trainer
                 }
             }
             double result = 1.0;
+            var sw = new Stopwatch();
+            sw.Start();
             for (int epoch = 0; epoch < trainingEpochs; epoch++)
             {
-
-                String show = "epoch[" + (epoch + 1) + "/" + trainingEpochs + "]";
 
                 double reportedLossTrain = Pass(learningRate, network, data.Training, true, data.LossTraining, data.LossReporting);
                 result = reportedLossTrain;
@@ -67,16 +68,22 @@ namespace SharpML.Recurrent.Trainer
                     reportedLossTesting = Pass(learningRate, network, data.Testing, false, data.LossTraining, data.LossReporting);
                     result = reportedLossTesting;
                 }
-                show += "\ttrain loss = " + String.Format("{0:N5}", reportedLossTrain);
-                if (data.Validation != null)
+                var output = sw.ElapsedMilliseconds > 500;
+                if (output)
                 {
-                    show += "\tvalid loss = " + String.Format("{0:N5}", reportedLossValidation);
+                    sw.Restart();
+                    String show = "epoch[" + (epoch + 1) + "/" + trainingEpochs + "]";
+                    show += "\ttrain loss = " + String.Format("{0:N5}", reportedLossTrain);
+                    if (data.Validation != null)
+                    {
+                        show += "\tvalid loss = " + String.Format("{0:N5}", reportedLossValidation);
+                    }
+                    if (data.Testing != null)
+                    {
+                        show += "\ttest loss  = " + String.Format("{0:N5}", reportedLossTesting);
+                    }
+                    Console.WriteLine(show);
                 }
-                if (data.Testing != null)
-                {
-                    show += "\ttest loss  = " + String.Format("{0:N5}", reportedLossTesting);
-                }
-                Console.WriteLine(show);
 
                 if (epoch % reportEveryNthEpoch == reportEveryNthEpoch - 1)
                 {
